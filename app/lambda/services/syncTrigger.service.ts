@@ -14,10 +14,12 @@ export async function triggerMerchantSync(shop: string, email: string, shopName:
   try {
     const response = await lambda.send(command);
     const body = JSON.parse(Buffer.from(response.Payload!).toString());
-
+    const needsRegistration = body?.needsRegistration || false;
+ 
     return {
       ok: true,
       message: `✅ Your store <b>${shop}</b> is successfully linked to DropX!`,
+      needsRegistration
     };
   } catch (error) {
     console.error("Lambda invoke failed:", error);

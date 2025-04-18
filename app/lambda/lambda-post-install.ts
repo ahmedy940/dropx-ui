@@ -33,8 +33,23 @@ export const handler = async (event: any) => {
       };
     }
 
-    const { ok, message } = await triggerMerchantSync(shop, email, shopName);
+    const { ok, message, needsRegistration } = await triggerMerchantSync(shop, email, shopName);
     console.log("✅ triggerMerchantSync result:", message);
+    
+    if (needsRegistration) {
+      const query = new URLSearchParams();
+      query.append("shop", shop);
+      query.append("email", email);
+      if (shopName) query.append("shopName", shopName);
+  
+      return {
+        statusCode: 302,
+        headers: {
+          Location: `/register-redirect?${query.toString()}`,
+        },
+        body: "",
+      };
+    }
 
     return {
       statusCode: 200,

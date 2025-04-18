@@ -9,8 +9,27 @@ export default function RegisterRedirect() {
 
   const [registrationComplete, setRegistrationComplete] = useState(false);
 
-  const handleContinue = () => {
-    window.location.href = `/post-install?email=${encodeURIComponent(email)}&shop=${encodeURIComponent(shop)}&shopName=${encodeURIComponent(shopName)}`;
+  const handleContinue = async () => {
+    try {
+      const res = await fetch("https://o5p1jotn5j.execute-api.us-east-1.amazonaws.com/dev/post-install", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ shop, email }),
+      });
+
+      const result = await res.json();
+
+      if (result?.needsRegistration) {
+        alert("Registration still required. Please complete the registration before continuing.");
+      } else {
+        window.location.href = `/post-install?email=${encodeURIComponent(email)}&shop=${encodeURIComponent(shop)}&shopName=${encodeURIComponent(shopName)}`;
+      }
+    } catch (error) {
+      console.error("Sync check failed:", error);
+      alert("An error occurred while verifying registration. Please try again.");
+    }
   };
 
   return (

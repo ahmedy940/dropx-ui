@@ -40,22 +40,6 @@ export default function App() {
         <Links />
       </head>
       <body>
-        <header>
-          <h1>DropX App</h1>
-        </header>
-        <nav>
-          <ul>
-            <li>
-              <a href="/app">Home</a>
-            </li>
-            <li>
-              <a href="/app/additional">Additional Page</a>
-            </li>
-            <li>
-              <a href="/app/settings">Settings</a>
-            </li>
-          </ul>
-        </nav>
         <main>
           <Outlet />
         </main>

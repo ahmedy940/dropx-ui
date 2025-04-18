@@ -11,7 +11,7 @@ app.use(morgan("tiny"));
 app.all(
   "*",
   createRequestHandler({
-  build: require("../build/index.js"),
+    build: require("../build/server/index.js"),
     mode: process.env.NODE_ENV,
   })
 );
