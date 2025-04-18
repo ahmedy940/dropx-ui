@@ -1,0 +1,87 @@
+service: dropx-lambdas
+
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: us-east-1
+  stage: dev
+  environment:
+    NODE_ENV: production
+    STAGE: ${opt:stage, 'dev'}
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - ssm:GetParameter
+            - ssm:GetParameters
+            - ssm:GetParametersByPath
+          Resource: arn:aws:ssm:us-east-1:*:parameter/dropx/${opt:stage, 'dev'}/*
+        - Effect: "Allow"
+          Action:
+            - "lambda:InvokeFunction"
+          Resource:
+            - arn:aws:lambda:us-east-1:605134429152:function:dropx-lambdas-*-merchantHandler
+
+package:
+  include:
+    - node_modules/.prisma/client/libquery_engine-rhel-openssl-1.0.x.so.node
+
+functions:
+  authHandler:
+    handler: app/lambda/lambda-shopify-auth.handler
+    events:
+      - http:
+          path: shopify/auth
+          method: get
+      - http:
+          path: shopify/webhook
+          method: post
+      - http:
+          path: shopify/callback
+          method: get
+      - http:
+          path: auth/callback
+          method: get
+
+  merchantHandler:
+    handler: app/lambda/lambda-shopify-merchant.handler
+    events:
+      - http:
+          path: shopify/sync
+          method: post
+
+  remixHandler:
+    handler: app/server.lambda.default
+    events:
+      - http:
+          path: /
+          method: ANY
+
+  postInstallHandler:
+    handler: app/lambda/lambda-post-install.handler
+    events:
+      - http:
+          path: post-install
+          method: get
+
+plugins:
+  - serverless-esbuild
+
+custom:
+  esbuild:
+    bundle: true
+    minify: false
+    sourcemap: true
+    target: node18
+    platform: node
+    concurrency: 10
+    external: ['@prisma/cli', 'dotenv', 'path', 'os', 'crypto']
+    entryPoints:
+      - app/server.lambda.ts
+      - app/lambda/lambda-post-install.ts
+
+resources:
+  Resources: {}

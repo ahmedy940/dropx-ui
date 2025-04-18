@@ -1,0 +1,52 @@
+generator client {
+  provider = "prisma-client-js"
+  binaryTargets = ["native", "rhel-openssl-1.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DROPX_DATABASE_URL")
+}
+
+/// / **Shop Table (Primary Store Data)**
+model Shop {
+  id                  Int          @id @default(autoincrement())
+  shopDomain          String       @unique
+  email               String       @unique
+  name                String
+  primaryDomain       String?
+  currencyCode        String?
+  timezone            String?
+  plan                String?
+  isCheckoutSupported Boolean
+  lastScopeUpdate     DateTime?
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+  accessToken         String?
+  activityLogs        ActivityLog?
+  sessions            Session?
+}
+
+/// **ActivityLog Table (Tracks Shop Actions)**
+model ActivityLog {
+  id         Int      @id @default(autoincrement())
+  shopDomain String   @unique
+  action     String
+  createdAt  DateTime @default(now())
+  shop       Shop     @relation(fields: [shopDomain], references: [shopDomain], onDelete: Cascade)
+}
+
+/// **Session Table (Keeps Track of Logins)**
+model Session {
+  id          Int       @id @default(autoincrement())
+  shopDomain  String    @unique
+  state       String
+  isOnline    Boolean   @default(false)
+  scope       String?
+  expires     DateTime?
+  accessToken String
+  email       String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  shop        Shop      @relation(fields: [shopDomain], references: [shopDomain], onDelete: Cascade)
+}

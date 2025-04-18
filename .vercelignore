@@ -1,0 +1,24 @@
+# Ignore AWS Lambda files
+app/lambda/
+.serverless/
+serverless.yml
+lambda-deployment.zip
+ssm-params.json
+
+# Ignore backend-related files
+app/db/
+app/utils/getSSMParam.ts
+app/types/
+config/
+test-db.js
+
+# Ignore Prisma files (not needed on Vercel UI)
+prisma/
+dev.sqlite
+
+# Ignore deployment artifacts
+.DS_Store
+.vscode/
+extensions/
+function.zip
+lambda-deployment.zip
