@@ -43,8 +43,28 @@ export const handleCallback = async (event: any) => {
       }),
     });
 
+    const contentType = tokenRes.headers.get("content-type") || "";
     const rawText = await tokenRes.text();
-    const tokenData = JSON.parse(rawText);
+
+    if (!contentType.includes("application/json")) {
+      console.error("❌ Unexpected response from Shopify token exchange:", rawText);
+      return {
+        statusCode: 500,
+        body: JSON.stringify({ error: "Unexpected response from Shopify" }),
+      };
+    }
+
+    let tokenData;
+    try {
+      tokenData = JSON.parse(rawText);
+    } catch (parseError) {
+      console.error("❌ Failed to parse token JSON:", rawText);
+      return {
+        statusCode: 500,
+        body: JSON.stringify({ error: "Invalid JSON in token response from Shopify" }),
+      };
+    }
+    
     const accessToken = tokenData.access_token;
 
     if (!accessToken) {
@@ -109,7 +129,11 @@ export const handleCallback = async (event: any) => {
       body: "",
     };
   } catch (error) {
-    console.error("OAuth Callback Error:", error);
+    console.error("OAuth Callback Error:", error, {
+      shop: event?.queryStringParameters?.shop,
+      code: event?.queryStringParameters?.code,
+      hmac: event?.queryStringParameters?.hmac,
+    });
     return {
       statusCode: 500,
       body: JSON.stringify({ error: "Internal Server Error during OAuth Callback" }),
