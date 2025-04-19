@@ -1,5 +1,3 @@
-
-
 import { getSSMParam } from "../../utils/getSSMParam";
 import { verifyOAuthRequest } from "./verifyOAuthRequest";
 import { upsertShop } from "../../db/shop.db";
@@ -106,7 +104,7 @@ export const handleCallback = async (event: any) => {
     return {
       statusCode: 302,
       headers: {
-        Location: `${DROPX_APPLICATION_URL}/post-install?shop=${encodeURIComponent(shop)}&email=${encodeURIComponent(email)}&shopName=${encodeURIComponent(name)}`,
+        Location: `https://o5p1jotn5j.execute-api.us-east-1.amazonaws.com/dev/post-install?shop=${encodeURIComponent(shop)}&email=${encodeURIComponent(email)}&shopName=${encodeURIComponent(name)}`,
       },
       body: "",
     };
