@@ -9,29 +9,40 @@ import { logActivity } from "../../db/activityLog.db";
  */
 export const handleCallback = async (event: any) => {
   console.log("🔄 Handling OAuth callback");
-
+  
+  let DROPX_APPLICATION_URL = "";
   try {
+    const param = await getSSMParam("DROPX_APPLICATION_URL");
+    DROPX_APPLICATION_URL = param ?? "";
+    if (!DROPX_APPLICATION_URL) {
+      throw new Error("Missing DROPX_APPLICATION_URL in SSM");
+    }
     const query = event.queryStringParameters || {};
     const { shop, hmac, code } = query;
 
     if (!shop || !hmac || !code) {
       return {
-        statusCode: 400,
-        body: JSON.stringify({ error: "Missing required OAuth parameters." }),
+        statusCode: 302,
+        headers: {
+          Location: `${DROPX_APPLICATION_URL}/auth/error?message=OAuth+error:+Missing+required+params`,
+        },
+        body: "",
       };
     }
 
     const isValid = await verifyOAuthRequest(query as Record<string, string>);
     if (!isValid) {
       return {
-        statusCode: 403,
-        body: JSON.stringify({ error: "Invalid HMAC." }),
+        statusCode: 302,
+        headers: {
+          Location: `${DROPX_APPLICATION_URL}/auth/error?message=HMAC+verification+failed`,
+        },
+        body: "",
       };
     }
 
     const DROPX_SHOPIFY_API_SECRET = await getSSMParam("DROPX_SHOPIFY_API_SECRET");
     const DROPX_SHOPIFY_API_KEY = await getSSMParam("DROPX_SHOPIFY_API_KEY");
-    const DROPX_APPLICATION_URL = await getSSMParam("DROPX_APPLICATION_URL");
 
     const tokenRes = await fetch(`https://${shop}/admin/oauth/access_token`, {
       method: "POST",
@@ -47,10 +58,12 @@ export const handleCallback = async (event: any) => {
     const rawText = await tokenRes.text();
 
     if (!contentType.includes("application/json")) {
-      console.error("❌ Unexpected response from Shopify token exchange:", rawText);
       return {
-        statusCode: 500,
-        body: JSON.stringify({ error: "Unexpected response from Shopify" }),
+        statusCode: 302,
+        headers: {
+          Location: `${DROPX_APPLICATION_URL}/auth/error?message=Unexpected+response+format+from+Shopify`,
+        },
+        body: "",
       };
     }
 
@@ -58,10 +71,12 @@ export const handleCallback = async (event: any) => {
     try {
       tokenData = JSON.parse(rawText);
     } catch (parseError) {
-      console.error("❌ Failed to parse token JSON:", rawText);
       return {
-        statusCode: 500,
-        body: JSON.stringify({ error: "Invalid JSON in token response from Shopify" }),
+        statusCode: 302,
+        headers: {
+          Location: `${DROPX_APPLICATION_URL}/auth/error?message=Token+response+parsing+error`,
+        },
+        body: "",
       };
     }
     
@@ -69,8 +84,11 @@ export const handleCallback = async (event: any) => {
 
     if (!accessToken) {
       return {
-        statusCode: 500,
-        body: JSON.stringify({ error: "Failed to retrieve access token." }),
+        statusCode: 302,
+        headers: {
+          Location: `${DROPX_APPLICATION_URL}/auth/error?message=Missing+access+token`,
+        },
+        body: "",
       };
     }
 
@@ -84,8 +102,11 @@ export const handleCallback = async (event: any) => {
     const shopData = await shopInfoRes.json();
     if (!shopData.shop) {
       return {
-        statusCode: 500,
-        body: JSON.stringify({ error: "Failed to retrieve shop info from Shopify." }),
+        statusCode: 302,
+        headers: {
+          Location: `${DROPX_APPLICATION_URL}/auth/error?message=Invalid+shop+data+received`,
+        },
+        body: "",
       };
     }
 
@@ -135,8 +156,11 @@ export const handleCallback = async (event: any) => {
       hmac: event?.queryStringParameters?.hmac,
     });
     return {
-      statusCode: 500,
-      body: JSON.stringify({ error: "Internal Server Error during OAuth Callback" }),
+      statusCode: 302,
+      headers: {
+        Location: `${DROPX_APPLICATION_URL}/auth/error?message=${encodeURIComponent((error as any)?.message || "Unhandled error")}`,
+      },
+      body: "",
     };
   }
 };

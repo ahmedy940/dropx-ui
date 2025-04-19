@@ -5,13 +5,15 @@ import { getSSMParam } from "../../utils/getSSMParam";
  * Verifies Shopify HMAC signature from OAuth or Webhook requests.
  * Returns true if verification succeeds, false otherwise.
  */
-export const verifyOAuthRequest = async (queryParams: Record<string, string>): Promise<boolean> => {
+export const verifyOAuthRequest = async (
+  queryParams: Record<string, string | undefined>
+): Promise<boolean> => {
   const DROPX_SHOPIFY_API_SECRET = await getSSMParam("DROPX_SHOPIFY_API_SECRET");
 
-  const sortedParams = Object.keys(queryParams)
-    .filter((key) => key !== "hmac")
-    .sort()
-    .map((key) => `${key}=${queryParams[key]}`)
+  const sortedParams = Object.entries(queryParams)
+    .filter(([key]) => key !== "hmac")
+    .sort(([keyA], [keyB]) => keyA.localeCompare(keyB))
+    .map(([key, value]) => `${key}=${value}`)
     .join("&");
 
   const generatedHmac = createHmac("sha256", DROPX_SHOPIFY_API_SECRET!)

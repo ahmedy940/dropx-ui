@@ -3,6 +3,7 @@ import { createHmac } from "crypto";
 import { upsertShop } from "../../db/shop.db";
 import { logActivity } from "../../db/activityLog.db";
 import { addSessionToDB } from "../../db/session.db";
+import { triggerMerchantSync } from "../services/syncTrigger.service";
 
 export const authenticateShopify = async (event: any) => {
   console.log("Authenticating Shopify install request:", JSON.stringify(event, null, 2));
@@ -133,13 +134,26 @@ export const authenticateShopify = async (event: any) => {
     await logActivity(shop, "App Installed via OAuth");
     console.debug("Activity logged successfully.");
 
+    const syncResult = await triggerMerchantSync(shop, accessToken, name);
+    
+    if (syncResult.needsRegistration) {
+      return {
+        statusCode: 302,
+        headers: {
+          Location: `${DROPX_APPLICATION_URL}/register-redirect?shop=${shop}&email=${email}`,
+        },
+        body: "",
+      };
+    }
+
     return {
       statusCode: 302,
       headers: {
-        Location: `${DROPX_APPLICATION_URL}/post-install?shop=${encodeURIComponent(shop)}&email=${encodeURIComponent(email)}&shopName=${encodeURIComponent(name)}`,
+        Location: `${DROPX_APPLICATION_URL}/app-installed?shop=${shop}&email=${email}`,
       },
       body: "",
     };
+    
   } catch (error) {
     console.error("OAuth Install Error:", error);
     return {

@@ -3,7 +3,7 @@ import { LambdaClient, InvokeCommand } from "@aws-sdk/client-lambda";
 export async function triggerMerchantSync(shop: string, email: string, shopName: string, force = false) {
   const lambda = new LambdaClient({ region: "us-east-1" });
 
-  const payload = JSON.stringify({ shopDomain: shop, force });
+  const payload = JSON.stringify({ shopDomain: shop, email, shopName, force });
 
   const command = new InvokeCommand({
     FunctionName: "dropx-lambdas-dev-merchantHandler",

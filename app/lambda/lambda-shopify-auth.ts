@@ -8,7 +8,7 @@ export const handler = async (event: any) => {
   const routes: Record<string, (e: any) => Promise<any> | any> = {
     "/shopify/webhook": authenticateWebhook,
     "/shopify/auth": authenticateShopify,
-    "/shopify/org-auth": () => authenticateOrgShopify(),
+    "/shopify/org-auth": (e) => authenticateOrgShopify(e),
     "/shopify/callback": handleCallback,
   };
 

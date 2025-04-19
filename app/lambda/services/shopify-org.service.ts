@@ -12,6 +12,12 @@ export async function checkCustomerExists(email: string, orgUrl: string, token: 
     { email }
   );
 
+  console.info("[Org Sync] Checked customer existence", {
+    email,
+    orgUrl,
+    found: checkRes.data?.data?.customers?.edges?.length > 0,
+  });
+
   return checkRes.success &&
     checkRes.data?.data?.customers?.edges?.length > 0;
 }

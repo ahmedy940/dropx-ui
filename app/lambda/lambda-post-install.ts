@@ -52,14 +52,11 @@ export const handler = async (event: any) => {
     }
 
     return {
-      statusCode: 200,
-      headers: { "Content-Type": "text/html" },
-      body: `
-        <div style="font-family:sans-serif;padding:2rem;text-align:center;">
-          <h1>Welcome to DropX 🎉</h1>
-          <p>${message || "Your setup is complete!"}</p>
-        </div>
-      `,
+      statusCode: 302,
+      headers: {
+        Location: `/app-installed?shop=${shop}&email=${email}`,
+      },
+      body: "",
     };
   } catch (e) {
     console.error("❌ Post-install failed:", e);

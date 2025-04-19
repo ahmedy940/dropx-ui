@@ -1,5 +1,3 @@
-
-
 export function extractQueryParams(query: any) {
   const { shop, email, shopName } = query || {};
   if (!shop || !email || !shopName) {

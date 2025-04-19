@@ -35,6 +35,7 @@ export const handler = async (event: any) => {
 
     const ORG_SHOPIFY_STORE_URL = await getSSMParam("ORG_SHOPIFY_STORE_URL");
     const ORG_SHOPIFY_ADMIN_API_TOKEN = await getSSMParam("ORG_SHOPIFY_ADMIN_API_TOKEN");
+    const DROPX_APPLICATION_URL = await getSSMParam("DROPX_APPLICATION_URL");
 
     if (!ORG_SHOPIFY_STORE_URL || !ORG_SHOPIFY_ADMIN_API_TOKEN) {
       throw new Error("Missing Shopify Org Store credentials");
@@ -52,10 +53,12 @@ export const handler = async (event: any) => {
       };
     }
 
-    console.log(`✅ Customer already exists: ${email}`);
     return {
-      statusCode: 200,
-      body: JSON.stringify({ message: "Customer already exists in org store." }),
+      statusCode: 302,
+      headers: {
+        Location: `${DROPX_APPLICATION_URL}/app-installed?shop=${shopDomain}&email=${encodeURIComponent(email)}`,
+      },
+      body: "",
     };
   } catch (error) {
     console.error("❌ Merchant Sync Error:", error);
