@@ -31,14 +31,14 @@ package:
 
 functions:
   authHandler:
-    handler: app/lambda/lambda.handler.authHandler
+    handler: app/lambda/lambda-shopify-auth.handler
     events:
       - http:
           path: shopify/org-auth
           method: post
 
   authRouterHandler:
-    handler: app/lambda/lambda.handler.authRouterHandler
+    handler: app/lambda/lambda-auth-router.handler
     events:
       - http:
           path: shopify/auth
@@ -48,21 +48,21 @@ functions:
           method: get
 
   checkOrgCustomerHandler:
-    handler: app/lambda/lambda.handler.checkOrgCustomerHandler
+    handler: app/lambda/lambda-check-org-customer.handler
     events:
       - http:
           path: check-org-customer
           method: post
 
   checkMerchantHandler:
-    handler: app/lambda/lambda.handler.checkMerchantHandler
+    handler: app/lambda/lambda-check-merchant.handler
     events:
       - http:
           path: check-merchant
           method: post
 
   createOrgCustomerHandler:
-    handler: app/lambda/lambda.handler.createOrgCustomerHandler
+    handler: app/lambda/lambda-create-org-customer.handler
     events:
       - http:
           path: create-org-customer
@@ -96,7 +96,10 @@ custom:
     external: ['@prisma/cli', 'dotenv', 'path', 'os', 'crypto']
     entryPoints:
       - app/server.lambda.ts
-      - app/lambda/lambda-post-install.ts
+      - app/lambda/lambda-handler.ts
+      - app/lambda/lambda-shopify-auth.ts
+      - app/lambda/lambda-auth-router.ts
+      - app/lambda/lambda-check-org-customer.ts
 
 resources:
   Resources: {}

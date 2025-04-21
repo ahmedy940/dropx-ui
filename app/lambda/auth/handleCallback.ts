@@ -3,6 +3,7 @@ import { verifyOAuthRequest } from "./verifyOAuthRequest";
 import { upsertShop } from "../../db/shop.db";
 import { addSessionToDB } from "../../db/session.db";
 import { logActivity } from "../../db/activityLog.db";
+import { parse } from "cookie";
 
 const redirectWithError = (message: string, baseUrl: string) => ({
   statusCode: 302,
@@ -34,8 +35,12 @@ export const handleCallback = async (event: any) => {
     return redirectWithError("HMAC+verification+failed", DROPX_APPLICATION_URL);
   }
 
-  const expectedState = event.headers?.Cookie?.split(';').find((c: string) => c.trim().startsWith('oauth_state='))?.split('=')[1];
+  const cookieHeader = event.headers?.cookie || event.headers?.Cookie || "";
+  const cookies = parse(cookieHeader);
+  const expectedState = cookies["oauth_state"];
+
   if (!state || !expectedState || state !== expectedState) {
+    console.warn("OAuth state mismatch:", { received: state, expected: expectedState });
     return redirectWithError("Invalid+OAuth+state+parameter", DROPX_APPLICATION_URL);
   }
 

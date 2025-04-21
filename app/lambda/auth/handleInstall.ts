@@ -1,5 +1,6 @@
 import { getSSMParam } from "../../utils/getSSMParam";
-import { createHmac } from "crypto";
+import { createHmac, createHash, randomBytes } from "crypto";
+import { createCookie } from "@remix-run/node";
 import { upsertShop } from "../../db/shop.db";
 import { logActivity } from "../../db/activityLog.db";
 import { addSessionToDB } from "../../db/session.db";
@@ -30,6 +31,21 @@ export const authenticateShopify = async (event: any) => {
 
     const { shop, hmac, code } = event.queryStringParameters || {};
     console.debug("Incoming OAuth Params:", { shop, hmac, code });
+
+    // Generate and persist OAuth state using a secure cookie
+    const state = createHash("sha256")
+      .update(randomBytes(16))
+      .digest("hex");
+
+    const stateCookie = createCookie("oauth_state", {
+      httpOnly: true,
+      secure: true,
+      sameSite: "lax",
+      path: "/",
+      maxAge: 300,
+    });
+
+    const setCookieHeader = await stateCookie.serialize(state);
 
     if (!shop || !hmac || !code) {
       console.error("Missing required OAuth parameters:", { shop, hmac, code });
@@ -170,7 +186,8 @@ export const authenticateShopify = async (event: any) => {
     return {
       statusCode: 302,
       headers: {
-        Location: `${POST_INSTALL_URL}?shop=${encodeURIComponent(shop)}&email=${encodeURIComponent(email)}&shopName=${encodeURIComponent(name)}`,
+        Location: `${POST_INSTALL_URL}?shop=${encodeURIComponent(shop)}&email=${encodeURIComponent(email)}&shopName=${encodeURIComponent(name)}&state=${state}`,
+        "Set-Cookie": setCookieHeader,
       },
       body: "",
     };
