@@ -5,6 +5,8 @@ import { logActivity } from "../../db/activityLog.db";
 import { addSessionToDB } from "../../db/session.db";
 import { triggerMerchantSync } from "../services/syncTrigger.service";
 
+const SHOPIFY_APP_SCOPE = "read_analytics,write_checkouts,write_companies,write_customers,write_discounts,write_draft_orders,write_fulfillments,write_inventory,write_locales,write_locations,write_marketing_events,write_metaobjects,write_orders,write_payment_terms,write_price_rules,write_products,write_reports,write_resource_feedbacks,write_script_tags,write_shipping,write_themes,read_shop";
+
 export const authenticateShopify = async (event: any) => {
   console.log("Authenticating Shopify install request:", JSON.stringify(event, null, 2));
 
@@ -13,6 +15,13 @@ export const authenticateShopify = async (event: any) => {
     const DROPX_SHOPIFY_API_SECRET = await getSSMParam("DROPX_SHOPIFY_API_SECRET");
     const DROPX_SHOPIFY_API_KEY = await getSSMParam("DROPX_SHOPIFY_API_KEY");
     const DROPX_APPLICATION_URL = await getSSMParam("DROPX_APPLICATION_URL");
+    if (!DROPX_APPLICATION_URL) {
+      console.error("DROPX_APPLICATION_URL not found in SSM");
+      return {
+        statusCode: 500,
+        body: JSON.stringify({ error: "Missing application redirect URL." }),
+      };
+    }
     console.debug("Retrieved SSM parameters:", {
       DROPX_SHOPIFY_API_SECRET,
       DROPX_SHOPIFY_API_KEY,
@@ -64,9 +73,16 @@ export const authenticateShopify = async (event: any) => {
       }),
     });
 
-    const rawText = await tokenRes.text();
-    console.debug("Raw Shopify token exchange response:", rawText);
-    const tokenData = JSON.parse(rawText);
+    let tokenData;
+    try {
+      tokenData = await tokenRes.json();
+    } catch (parseError) {
+      console.error("Failed to parse token response:", parseError);
+      return {
+        statusCode: 500,
+        body: JSON.stringify({ error: "Failed to parse token response from Shopify." }),
+      };
+    }
     const accessToken = tokenData.access_token;
     console.debug("Access token retrieved:", accessToken ? "Token received" : "No token");
 
@@ -86,7 +102,16 @@ export const authenticateShopify = async (event: any) => {
       },
     });
 
-    const shopData = await shopInfoRes.json();
+    let shopData;
+    try {
+      shopData = await shopInfoRes.json();
+    } catch (shopParseError) {
+      console.error("Failed to parse shop info response:", shopParseError);
+      return {
+        statusCode: 500,
+        body: JSON.stringify({ error: "Failed to parse shop info response from Shopify." }),
+      };
+    }
     console.debug("Shop Info retrieved:", JSON.stringify(shopData, null, 2));
     if (!shopData.shop) {
       console.error("Shop info missing in response:", shopData);
@@ -124,7 +149,7 @@ export const authenticateShopify = async (event: any) => {
       accessToken,
       email,
       state: "",
-      scope: "read_analytics,write_checkouts,write_companies,write_customers,write_discounts,write_draft_orders,write_fulfillments,write_inventory,write_locales,write_locations,write_marketing_events,write_metaobjects,write_orders,write_payment_terms,write_price_rules,write_products,write_reports,write_resource_feedbacks,write_script_tags,write_shipping,write_themes,read_shop",
+      scope: SHOPIFY_APP_SCOPE,
       isOnline: false,
       expires: null,
     });
@@ -134,22 +159,18 @@ export const authenticateShopify = async (event: any) => {
     await logActivity(shop, "App Installed via OAuth");
     console.debug("Activity logged successfully.");
 
-    const syncResult = await triggerMerchantSync(shop, accessToken, name);
-    
-    if (syncResult.needsRegistration) {
+    const POST_INSTALL_URL = await getSSMParam("DROPX_POST_INSTALL_REDIRECT");
+    if (!POST_INSTALL_URL) {
       return {
-        statusCode: 302,
-        headers: {
-          Location: `${DROPX_APPLICATION_URL}/register-redirect?shop=${shop}&email=${email}`,
-        },
-        body: "",
+        statusCode: 500,
+        body: JSON.stringify({ error: "Missing post-install redirect URL." }),
       };
     }
-
+    
     return {
       statusCode: 302,
       headers: {
-        Location: `${DROPX_APPLICATION_URL}/app-installed?shop=${shop}&email=${email}`,
+        Location: `${POST_INSTALL_URL}?shop=${encodeURIComponent(shop)}&email=${encodeURIComponent(email)}&shopName=${encodeURIComponent(name)}`,
       },
       body: "",
     };

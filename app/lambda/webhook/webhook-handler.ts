@@ -1,5 +1,3 @@
-
-
 import { handleProductWebhook } from "./webhook-product";
 
 export const handler = async (event: any) => {

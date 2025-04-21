@@ -13,7 +13,11 @@ export async function triggerMerchantSync(shop: string, email: string, shopName:
 
   try {
     const response = await lambda.send(command);
-    const body = JSON.parse(Buffer.from(response.Payload!).toString());
+    if (!response.Payload) {
+      throw new Error("No payload returned from Lambda");
+    }
+    const body = JSON.parse(Buffer.from(response.Payload).toString());
+    console.info("[Merchant Sync] Lambda payload:", body);
     const needsRegistration = body?.needsRegistration || false;
  
     return {

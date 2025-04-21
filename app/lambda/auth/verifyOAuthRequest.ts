@@ -1,4 +1,4 @@
-import { createHmac } from "crypto";
+import { createHmac, timingSafeEqual } from "crypto";
 import { getSSMParam } from "../../utils/getSSMParam";
 
 /**
@@ -20,5 +20,10 @@ export const verifyOAuthRequest = async (
     .update(sortedParams)
     .digest("hex");
 
-  return generatedHmac === queryParams.hmac;
+  const receivedHmac = queryParams.hmac ?? "";
+  const hmacBuffer = Buffer.from(generatedHmac, "utf-8");
+  const receivedBuffer = Buffer.from(receivedHmac, "utf-8");
+
+  if (hmacBuffer.length !== receivedBuffer.length) return false;
+  return timingSafeEqual(hmacBuffer, receivedBuffer);
 };

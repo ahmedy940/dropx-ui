@@ -48,4 +48,10 @@ export async function createCustomerInOrg(
   if (!createRes.success || !createRes.data?.data?.customerCreate?.customer) {
     throw new Error("Failed to create customer");
   }
+  
+  console.info("[Org Sync] Created customer in DropX org", {
+    email,
+    shopName,
+    orgUrl,
+  });
 }

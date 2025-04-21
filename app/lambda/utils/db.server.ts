@@ -9,8 +9,18 @@ async function getDatabaseUrl(): Promise<string> {
     Name: "/dropx/dev/DROPX_DATABASE_URL",
     WithDecryption: true,
   });
-  const result = await ssm.send(command);
-  return result.Parameter?.Value || "";
+
+  try {
+    const result = await ssm.send(command);
+    const dbUrl = result.Parameter?.Value;
+    if (!dbUrl) {
+      throw new Error("DROPX_DATABASE_URL not found in SSM");
+    }
+    return dbUrl;
+  } catch (error) {
+    console.error("Failed to fetch database URL from SSM:", error);
+    throw new Error("Database configuration error");
+  }
 }
 
 export async function getPrisma(): Promise<PrismaClient> {

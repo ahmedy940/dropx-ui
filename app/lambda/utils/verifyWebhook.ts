@@ -1,18 +1,19 @@
-
-
-import { createHmac } from "crypto";
-import { SHOPIFY_WEBHOOK_SECRET } from "../../db/config";
+import { createHmac, timingSafeEqual } from "crypto";
 
 /**
  * ✅ Validates the HMAC signature for Shopify webhook security
  */
-export function verifyWebhookHMAC(rawBody: string, hmacHeader: string): boolean {
+export function verifyWebhookHMAC(rawBody: string, hmacHeader: string, webhookSecret: string): boolean {
   try {
-    const digest = createHmac("sha256", SHOPIFY_WEBHOOK_SECRET!)
+    const digest = createHmac("sha256", webhookSecret)
       .update(rawBody, "utf8")
       .digest("base64");
 
-    return digest === hmacHeader;
+    const receivedBuffer = Buffer.from(hmacHeader, "base64");
+    const digestBuffer = Buffer.from(digest, "base64");
+
+    if (receivedBuffer.length !== digestBuffer.length) return false;
+    return timingSafeEqual(receivedBuffer, digestBuffer);
   } catch (error) {
     console.error("[VERIFY HMAC ERROR]:", error);
     return false;

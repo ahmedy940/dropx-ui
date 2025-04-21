@@ -1,4 +1,4 @@
-import fetch from "node-fetch";
+Console.log("");import fetch from "node-fetch";
 import { authenticateOrgShopify } from "./lambda-shopify-auth";
 
 /**

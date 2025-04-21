@@ -1,8 +1,21 @@
-
-
 import { verifyWebhookHMAC } from "../utils/verifyWebhook";
-import { fetchMerchantByEmail, registerMerchant } from "../lambda-shopify-merchant";
-import { getShopByEmail } from "../lambda-shopify-shop";
+import { getDropxConfig } from "../../db/config";
+// TODO: Replace with real merchant service when available
+async function fetchMerchantByEmail(email: string): Promise<boolean> {
+  console.warn(`[PLACEHOLDER] fetchMerchantByEmail called for ${email}`);
+  return true; // Simulated existence
+}
+
+async function registerMerchant(email: string): Promise<boolean> {
+  console.warn(`[PLACEHOLDER] registerMerchant called for ${email}`);
+  return true; // Simulated registration
+}
+// Placeholder: getShopByEmail implementation will be replaced when the module is available.
+async function getShopByEmail(email: string): Promise<{ shopDomain: string; accessToken: string } | null> {
+  // TODO: Replace this with actual implementation from lambda-shopify-shop
+  console.warn("[WARNING]: getShopByEmail is using a placeholder implementation.");
+  return null;
+}
 import { copyProductToMerchantStore } from "../lambda-shopify-product";
 
 export async function handleProductWebhook(event: any) {
@@ -13,7 +26,13 @@ export async function handleProductWebhook(event: any) {
       return { statusCode: 401, body: JSON.stringify({ error: "Unauthorized request." }) };
     }
 
-    const isValidHmac = verifyWebhookHMAC(event.body, hmacHeader);
+    const { SHOPIFY_WEBHOOK_SECRET } = await getDropxConfig();
+    if (!SHOPIFY_WEBHOOK_SECRET) {
+      console.error("[WEBHOOK ERROR]: Missing SHOPIFY_WEBHOOK_SECRET from config.");
+      return { statusCode: 500, body: JSON.stringify({ error: "Webhook secret not configured." }) };
+    }
+
+    const isValidHmac = verifyWebhookHMAC(event.body, hmacHeader, SHOPIFY_WEBHOOK_SECRET);
     if (!isValidHmac) {
       console.error("[WEBHOOK ERROR]: HMAC verification failed.");
       return { statusCode: 401, body: JSON.stringify({ error: "Unauthorized request." }) };

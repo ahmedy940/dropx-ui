@@ -1,9 +1,12 @@
-import { authenticateShopify } from "./auth/handleInstall";
-export { handler as merchantHandler } from "./lambda-shopify-merchant";
+import { } from "./auth/handleInstall";
 export { handler as authHandler } from "./lambda-shopify-auth";
 export { handler as postInstallHandler } from "./lambda-post-install";
 export { handler as proxyHandler } from "./lambda-proxy";
 export { handler as productHandler } from "./lambda-shopify-product";
 export { handler as graphqlHandler } from "./lambda-shopify-graphql";
 export { handler as webhookHandler } from "./webhook/webhook-handler";
+export { handler as checkOrgCustomerHandler } from "./lambda-check-org-customer";
+export { handler as checkMerchantHandler } from "./lambda-check-merchant";
+export { handler as createOrgCustomerHandler } from "./lambda-create-org-customer";
+export { handler as authRouterHandler } from "./lambda-auth-router";
 // export { handler as webhookProductHandler } from "./webhook/webhook-product";

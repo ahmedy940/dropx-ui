@@ -31,26 +31,41 @@ package:
 
 functions:
   authHandler:
-    handler: app/lambda/lambda-shopify-auth.handler
+    handler: app/lambda/lambda.handler.authHandler
+    events:
+      - http:
+          path: shopify/org-auth
+          method: post
+
+  authRouterHandler:
+    handler: app/lambda/lambda.handler.authRouterHandler
     events:
       - http:
           path: shopify/auth
           method: get
       - http:
-          path: shopify/webhook
-          method: post
-      - http:
           path: shopify/callback
           method: get
-      - http:
-          path: auth/callback
-          method: get
 
-  merchantHandler:
-    handler: app/lambda/lambda-shopify-merchant.handler
+  checkOrgCustomerHandler:
+    handler: app/lambda/lambda.handler.checkOrgCustomerHandler
     events:
       - http:
-          path: shopify/sync
+          path: check-org-customer
+          method: post
+
+  checkMerchantHandler:
+    handler: app/lambda/lambda.handler.checkMerchantHandler
+    events:
+      - http:
+          path: check-merchant
+          method: post
+
+  createOrgCustomerHandler:
+    handler: app/lambda/lambda.handler.createOrgCustomerHandler
+    events:
+      - http:
+          path: create-org-customer
           method: post
 
   remixHandler:

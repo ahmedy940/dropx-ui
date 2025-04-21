@@ -1,6 +1,5 @@
 
-
-import { json, LoaderFunctionArgs } from "@remix-run/node";
+import { LoaderFunctionArgs } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -11,12 +10,19 @@ export async function loader({ request }: LoaderFunctionArgs) {
     throw new Response("Missing shop parameter", { status: 400 });
   }
 
-  // Simulated sync check (replace with real DB or API call)
-  const isSynced = shop.endsWith(".myshopify.com"); // Simplified condition
+  const response = await fetch("https://o5p1jotn5j.execute-api.us-east-1.amazonaws.com/dev/check-org-customer", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ shopDomain: shop }),
+  });
 
-  return json({
+  const result = await response.json();
+
+  return Response.json({
     shop,
-    status: isSynced ? "✅ Synced" : "❌ Not Found in Org Store",
+    status: result?.needsRegistration ? "❌ Not Found in Org Store" : "✅ Synced",
   });
 }
 

@@ -1,63 +1,21 @@
-import { extractQueryParams } from "./utils/queryString";
+import { validateInstallQuery } from "./utils/validateInstallQuery";
+import { decideNextStep } from "./utils/handleMerchantRouting";
 import { triggerMerchantSync } from "./services/syncTrigger.service";
 
 export const handler = async (event: any) => {
   console.log("🛬 Arrived at postInstallHandler", event);
 
   try {
-    const { shop, email, shopName, error } = {
-      ...extractQueryParams(event.queryStringParameters),
-      error: extractQueryParams(event.queryStringParameters).error,
-    };
-
-    if (error) {
-      return {
-        statusCode: 400,
-        headers: { "Content-Type": "text/html" },
-        body: `<h2>❌ ${error}</h2>`,
-      };
-    }
+    const { shop, email, shopName } = validateInstallQuery(event.queryStringParameters);
 
     if (!shop || !email) {
-      const query = new URLSearchParams();
-      if (shop) query.append("shop", shop);
-      if (email) query.append("email", email);
-      if (shopName) query.append("shopName", shopName);
-
-      return {
-        statusCode: 302,
-        headers: {
-          Location: `/register-redirect?${query.toString()}`,
-        },
-        body: "",
-      };
+      return decideNextStep(shop, email, shopName, true);
     }
 
     const { ok, message, needsRegistration } = await triggerMerchantSync(shop, email, shopName);
     console.log("✅ triggerMerchantSync result:", message);
-    
-    if (needsRegistration) {
-      const query = new URLSearchParams();
-      query.append("shop", shop);
-      query.append("email", email);
-      if (shopName) query.append("shopName", shopName);
-  
-      return {
-        statusCode: 302,
-        headers: {
-          Location: `/register-redirect?${query.toString()}`,
-        },
-        body: "",
-      };
-    }
 
-    return {
-      statusCode: 302,
-      headers: {
-        Location: `/app-installed?shop=${shop}&email=${email}`,
-      },
-      body: "",
-    };
+    return decideNextStep(shop, email, shopName, needsRegistration);
   } catch (e) {
     console.error("❌ Post-install failed:", e);
     return {
