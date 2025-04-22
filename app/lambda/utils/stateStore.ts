@@ -12,7 +12,15 @@ const stateStore: Map<string, StateEntry> = new Map();
  * Stores a temporary OAuth state for a given shop, valid for a limited time.
  */
 export function storeOAuthState(shop: string, state: string, ttlMs = 5 * 60 * 1000): void {
-  const expiresAt = Date.now() + ttlMs;
+  const existing = stateStore.get(shop);
+  const now = Date.now();
+
+  if (existing && existing.expiresAt > now) {
+    console.log(`[StateStore] State already exists for ${shop}, skipping overwrite.`);
+    return;
+  }
+
+  const expiresAt = now + ttlMs;
   stateStore.set(shop, { value: state, expiresAt });
   console.log(`[StateStore] Stored state for ${shop}: ${state}`);
 }
