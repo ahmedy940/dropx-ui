@@ -1,26 +1,33 @@
-/**
- * Legacy multi-route Lambda handler for internal Shopify app features.
- * This may be deprecated in favor of dedicated Lambda routes.
- * Current purpose: temporarily support org-auth and internal routing.
- */
-
 import { authenticateOrgShopify } from "./auth/orgAuth";
+
+type InternalHandler = (event: any) => Promise<any>;
+
+const routes: Record<string, InternalHandler> = {
+  "/shopify/org-auth": authenticateOrgShopify,
+};
 
 export const handler = async (event: any) => {
   const path = event.rawPath || event.path || "";
-  const routes: Record<string, (e: any) => Promise<any> | any> = {
-    "/shopify/org-auth": (e) => authenticateOrgShopify(e),
-  };
+  console.info("[SHOPIFY INTERNAL] Incoming request:", path);
 
-  const routeHandler = routes[path];
-  if (routeHandler) {
-    return routeHandler(event);
+  const handlerFn = routes[path];
+  if (!handlerFn) {
+    console.warn("[SHOPIFY INTERNAL] No route matched:", path);
+    return {
+      statusCode: 404,
+      body: JSON.stringify({ error: `Unknown route: ${path}` }),
+    };
   }
 
-  return {
-    statusCode: 404,
-    body: JSON.stringify({ error: `Unknown route: ${path}` }),
-  };
+  try {
+    return await handlerFn(event);
+  } catch (error: any) {
+    console.error("[SHOPIFY INTERNAL] Handler error:", path, error.message);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: "Internal handler error", message: error.message }),
+    };
+  }
 };
 
 export { authenticateOrgShopify };

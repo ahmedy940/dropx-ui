@@ -1,10 +1,10 @@
 import { getSSMParam } from "../../utils/getSSMParam";
 import { createHmac, createHash, randomBytes } from "crypto";
-import { createCookie } from "@remix-run/node";
 import { upsertShop } from "../../db/shop.db";
 import { logActivity } from "../../db/activityLog.db";
 import { addSessionToDB } from "../../db/session.db";
 import { triggerMerchantSync } from "../services/syncTrigger.service";
+import { storeOAuthState } from "../utils/stateStore";
 
 const SHOPIFY_APP_SCOPE = "read_analytics,write_checkouts,write_companies,write_customers,write_discounts,write_draft_orders,write_fulfillments,write_inventory,write_locales,write_locations,write_marketing_events,write_metaobjects,write_orders,write_payment_terms,write_price_rules,write_products,write_reports,write_resource_feedbacks,write_script_tags,write_shipping,write_themes,read_shop";
 
@@ -31,23 +31,17 @@ export const authenticateShopify = async (event: any) => {
 
     const state = createHash("sha256").update(randomBytes(16)).digest("hex");
 
-    const stateCookie = createCookie("oauth_state", {
-      httpOnly: true,
-      secure: true,
-      sameSite: "lax",
-      path: "/",
-      maxAge: 300,
-    });
-
-    const setCookieHeader = await stateCookie.serialize(state);
+    storeOAuthState(shop, state);
 
     const redirectToShopifyOAuth = `https://${shop}/admin/oauth/authorize?client_id=${DROPX_SHOPIFY_API_KEY}&scope=${SHOPIFY_APP_SCOPE}&redirect_uri=${encodeURIComponent(DROPX_APPLICATION_URL + "/shopify/callback")}&state=${state}`;
+
+    console.log("[Install] Redirecting to:", redirectToShopifyOAuth);
+    console.log("[Install] OAuth state:", state);
 
     return {
       statusCode: 302,
       headers: {
         Location: redirectToShopifyOAuth,
-        "Set-Cookie": setCookieHeader,
       },
       body: "",
     };

@@ -1,10 +1,10 @@
 import { getSSMParam } from "../../utils/getSSMParam";
 import { verifyOAuthRequest } from "./verifyOAuthRequest";
-import { parse } from "cookie";
 import { exchangeShopifyToken } from "./exchangeShopifyToken";
 import { fetchShopInfo } from "./fetchShopInfo";
 import { processShopInstall } from "./processShopInstall";
 import { redirectWithError } from "./redirectWithError";
+import { getOAuthState } from "../utils/stateStore";
 
 /**
  * Handles Shopify OAuth redirect by verifying HMAC, exchanging the token, storing shop info, and redirecting to post-install.
@@ -17,6 +17,7 @@ export const handleCallback = async (event: any) => {
     throw new Error("Missing DROPX_APPLICATION_URL in SSM");
   }
   const query = event.queryStringParameters || {};
+  console.log("[Callback] Raw Query Params:", query);
   const { shop, hmac, code, state } = query;
 
   if (!shop || !hmac || !code) {
@@ -28,13 +29,18 @@ export const handleCallback = async (event: any) => {
     return redirectWithError("HMAC+verification+failed", DROPX_APPLICATION_URL);
   }
 
-  const cookieHeader = event.headers?.cookie || event.headers?.Cookie || "";
-  const cookies = parse(cookieHeader);
-  const expectedState = cookies["oauth_state"];
+  console.log("[Callback] Query state:", state);
 
-  if (!state || !expectedState || state !== expectedState) {
-    console.warn("OAuth state mismatch:", { received: state, expected: expectedState });
-    return redirectWithError("Invalid+OAuth+state+parameter", DROPX_APPLICATION_URL);
+  if (!state) {
+    console.warn("Missing state param in query.");
+    return redirectWithError("Missing+OAuth+state+parameter", DROPX_APPLICATION_URL);
+  }
+
+  // Verify state against stored state
+  const storedState = getOAuthState(shop);
+  if (!storedState || storedState !== state) {
+    console.warn("Invalid or expired OAuth state parameter.");
+    return redirectWithError("Invalid+or+expired+OAuth+state+parameter", DROPX_APPLICATION_URL);
   }
 
   const DROPX_SHOPIFY_API_SECRET = await getSSMParam("DROPX_SHOPIFY_API_SECRET");
@@ -59,11 +65,16 @@ export const handleCallback = async (event: any) => {
     return redirectWithError("Missing+post+install+URL", DROPX_APPLICATION_URL);
   }
   
-  return {
-    statusCode: 302,
-    headers: {
-      Location: `${POST_INSTALL_URL}?shop=${encodeURIComponent(shop)}&email=${encodeURIComponent(email)}&shopName=${encodeURIComponent(name)}`,
-    },
-    body: "",
-  };
+console.log(
+  "✅ Redirecting to POST_INSTALL_URL:",
+  `${POST_INSTALL_URL}?shop=${shop}&email=${email}&shopName=${name}`
+);
+
+return {
+  statusCode: 302,
+  headers: {
+    Location: `${POST_INSTALL_URL}?shop=${encodeURIComponent(shop)}&email=${encodeURIComponent(email)}&shopName=${encodeURIComponent(name)}`,
+  },
+  body: "",
+};
 };
