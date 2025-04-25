@@ -19,78 +19,79 @@ provider:
             - ssm:GetParameters
             - ssm:GetParametersByPath
           Resource: arn:aws:ssm:us-east-1:*:parameter/dropx/${opt:stage, 'dev'}/*
-        - Effect: "Allow"
+        - Effect: Allow
           Action:
-            - "lambda:InvokeFunction"
+            - lambda:InvokeFunction
           Resource:
             - arn:aws:lambda:us-east-1:605134429152:function:dropx-lambdas-*-merchantHandler
 
 package:
   individually: true
   patterns:
-    - '!node_modules/**'
+    - '!**/*'
+    - 'app/lambda/**'
     - 'node_modules/.prisma/client/**'
     - 'node_modules/@prisma/client/**'
     - '!**/*.test.ts'
     - '!**/*.spec.ts'
     - '!tests/**'
-    - '!src/**/*.map'
     - '!**/*.md'
+    - '!**/*.map'
 
 functions:
   authHandler:
     handler: app/lambda/lambda-shopify-auth.handler
     events:
-      - http:
-          path: shopify/org-auth
+      - httpApi:
+          path: /shopify/org-auth
           method: post
 
   authRouterHandler:
     handler: app/lambda/lambda-auth-router.handler
     events:
-      - http:
-          path: shopify/auth
+      - httpApi:
+          path: /shopify/auth
           method: get
-      - http:
-          path: shopify/callback
+      - httpApi:
+          path: /shopify/callback
           method: get
 
   checkOrgCustomerHandler:
     handler: app/lambda/lambda-check-org-customer.handler
     events:
-      - http:
-          path: check-org-customer
+      - httpApi:
+          path: /check-org-customer
           method: post
 
   checkMerchantHandler:
     handler: app/lambda/lambda-check-merchant.handler
     events:
-      - http:
-          path: check-merchant
+      - httpApi:
+          path: /check-merchant
           method: post
 
   createOrgCustomerHandler:
     handler: app/lambda/lambda-create-org-customer.handler
     events:
-      - http:
-          path: create-org-customer
+      - httpApi:
+          path: /create-org-customer
           method: post
 
   remixHandler:
     handler: app/lambda/remixHandler.handler
     events:
-      - http:
+      - httpApi:
           path: /
           method: ANY
-      - http:
+      - httpApi:
           path: /{proxy+}
           method: ANY
 
   postInstallHandler:
     handler: app/lambda/lambda-post-install.handler
     events:
-      - http:
-          path: post-install
+      - httpApi:
+          path: /post-install
           method: get
 
 plugins:
@@ -104,7 +105,13 @@ custom:
     target: node18
     platform: node
     concurrency: 10
-    external: ['@prisma/cli', 'dotenv', 'path', 'os', 'crypto']
+    external:
+      - '@prisma/client'
+      - '.prisma/client'
+      - 'aws-sdk'
+      - 'dotenv'
+      - 'path'
+      - 'crypto'
     entryPoints:
       - app/lambda/remixHandler.ts
       - app/lambda/lambda-handler.ts
@@ -115,5 +122,33 @@ custom:
       - app/lambda/lambda-create-org-customer.ts
       - app/lambda/lambda-post-install.ts
 
-resources:
-  Resources: {}
+# resources:
+#   Outputs:
+#     RemixHandlerFunction:
+#       Value: !GetAtt remixHandler.Arn
+#       Export:
+#         Name: RemixHandlerFunction
+#     AuthHandlerFunction:
+#       Value: !GetAtt authHandler.Arn
+#       Export:
+#         Name: AuthHandlerFunction
+#     AuthRouterHandlerFunction:
+#       Value: !GetAtt authRouterHandler.Arn
+#       Export:
+#         Name: AuthRouterHandlerFunction
+#     CheckOrgCustomerHandlerFunction:
+#       Value: !GetAtt checkOrgCustomerHandler.Arn
+#       Export:
+#         Name: CheckOrgCustomerHandlerFunction
+#     CheckMerchantHandlerFunction:
+#       Value: !GetAtt checkMerchantHandler.Arn
+#       Export:
+#         Name: CheckMerchantHandlerFunction
+#     CreateOrgCustomerHandlerFunction:
+#       Value: !GetAtt createOrgCustomerHandler.Arn
+#       Export:
+#         Name: CreateOrgCustomerHandlerFunction
+#     PostInstallHandlerFunction:
+#       Value: !GetAtt postInstallHandler.Arn
+#       Export:
+#         Name: PostInstallHandlerFunction
