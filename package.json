@@ -95,6 +95,41 @@
     "vite": "^5.4.17",
     "vite-tsconfig-paths": "^5.1.4"
   },
+  "prisma": {
+    "binaryTargets": [
+      "native",
+      "rhel-openssl-1.0.x"
+    ]
+  },
+  "eslintConfig": {
+    "extends": [
+      "@remix-run/eslint-config",
+      "plugin:prettier/recommended"
+    ],
+    "overrides": [
+      {
+        "files": [
+          "**/*.ts",
+          "**/*.tsx"
+        ],
+        "rules": {
+          "@typescript-eslint/no-unused-vars": [
+            "error",
+            {
+              "argsIgnorePattern": "^_"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "prettier": {
+    "singleQuote": true,
+    "trailingComma": "all",
+    "tabWidth": 2,
+    "semi": false,
+    "printWidth": 100
+  },
   "workspaces": [
     "extensions/*"
   ],
