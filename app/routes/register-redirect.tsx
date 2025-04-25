@@ -8,10 +8,13 @@ export default function RegisterRedirect() {
   const shopName = searchParams.get("shopName") || "";
 
   const [registrationComplete, setRegistrationComplete] = useState(false);
+  const [checking, setChecking] = useState(false);
 
   const handleContinue = async () => {
     try {
-      const res = await fetch("https://o5p1jotn5j.execute-api.us-east-1.amazonaws.com/dev/post-install", {
+      setChecking(true);
+      const postInstallEndpoint = "https://app.drop-x.co/post-install"; // using SSM param value here
+      const res = await fetch(postInstallEndpoint, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -22,12 +25,14 @@ export default function RegisterRedirect() {
       const result = await res.json();
 
       if (result?.needsRegistration) {
+        setChecking(false);
         alert("Registration still required. Please complete the registration before continuing.");
       } else {
+        setRegistrationComplete(true);
         window.location.href = `/post-install?email=${encodeURIComponent(email)}&shop=${encodeURIComponent(shop)}&shopName=${encodeURIComponent(shopName)}`;
       }
     } catch (error) {
-      console.error("Sync check failed:", error);
+      console.error("[ERROR] Sync check failed:", error);
       alert("An error occurred while verifying registration. Please try again.");
     }
   };
@@ -55,21 +60,25 @@ export default function RegisterRedirect() {
             Register on DropX
           </a>
           <p>Once you're done, click the button below to continue.</p>
-          <button
-            onClick={handleContinue}
-            style={{
-              marginTop: "1rem",
-              padding: "0.75rem 1.5rem",
-              fontSize: "1rem",
-              borderRadius: "5px",
-              border: "none",
-              backgroundColor: "#0070f3",
-              color: "#fff",
-              cursor: "pointer"
-            }}
-          >
-            ✅ I've Registered, Continue
-          </button>
+          {checking ? (
+            <p>🔄 Verifying your registration...</p>
+          ) : (
+            <button
+              onClick={handleContinue}
+              style={{
+                marginTop: "1rem",
+                padding: "0.75rem 1.5rem",
+                fontSize: "1rem",
+                borderRadius: "5px",
+                border: "none",
+                backgroundColor: "#0070f3",
+                color: "#fff",
+                cursor: "pointer"
+              }}
+            >
+              ✅ I've Registered, Continue
+            </button>
+          )}
         </>
       ) : (
         <h2>✅ You're already synced with DropX!</h2>

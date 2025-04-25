@@ -1,5 +1,6 @@
-Console.log("");import fetch from "node-fetch";
+import fetch from "node-fetch";
 import { authenticateOrgShopify } from "./lambda-shopify-auth";
+import { handleProductWebhook as handleProductAddWebhook } from "./webhook/webhook-product";
 
 /**
  * ✅ AWS Lambda Proxy Handler
@@ -12,6 +13,7 @@ export const handler = async (event: any) => {
 
   try {
     const endpoint = queryStringParameters?.endpoint;
+    const shop = queryStringParameters?.shop;
 
     if (!endpoint) {
       console.error("[PROXY ERROR]: Missing endpoint parameter.");
@@ -21,17 +23,17 @@ export const handler = async (event: any) => {
       };
     }
 
-    // if (endpoint === "product-add-webhook") {
-    //   if (httpMethod !== "POST") {
-    //     return {
-    //       statusCode: 405,
-    //       body: JSON.stringify({ error: "Method Not Allowed" }),
-    //     };
-    //   }
+    if (endpoint === "product-add-webhook") {
+      if (httpMethod !== "POST") {
+        return {
+          statusCode: 405,
+          body: JSON.stringify({ error: "Method Not Allowed" }),
+        };
+      }
 
-    //   console.log(`[PROXY]: Handling product add webhook...`);
-    //   return await handleProductAddWebhook(event);
-    // }
+      console.log(`[PROXY]: Handling product add webhook...`);
+      return await handleProductAddWebhook(event);
+    }
 
     // ✅ Handle Merchant Sync API Proxying
     if (endpoint === "merchant-sync") {
@@ -49,11 +51,12 @@ export const handler = async (event: any) => {
     }
 
     // ✅ Secure API Request Forwarding to Organization Shopify Admin API
-    const authResult = await authenticateOrgShopify();
+    const authResult = await authenticateOrgShopify(shop);
     if ('statusCode' in authResult && 'body' in authResult) {
       return authResult;
     }
-    const { storeUrl, adminToken } = authResult;
+    const storeUrl = authResult.shopDomain;
+    const adminToken = authResult.accessToken;
     console.log(`[PROXY]: Forwarding request to ${storeUrl}/admin/api/2025-01/${endpoint}.json`);
 
     return await fetchProxy(`https://${storeUrl}/admin/api/2025-01/${endpoint}.json`, httpMethod, {

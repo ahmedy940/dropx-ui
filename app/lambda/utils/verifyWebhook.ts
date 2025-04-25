@@ -12,10 +12,15 @@ export function verifyWebhookHMAC(rawBody: string, hmacHeader: string, webhookSe
     const receivedBuffer = Buffer.from(hmacHeader, "base64");
     const digestBuffer = Buffer.from(digest, "base64");
 
+    if (process.env.NODE_ENV === "development") {
+      console.log("[DEBUG] Calculated HMAC:", digest);
+      console.log("[DEBUG] Received HMAC:", hmacHeader);
+    }
+
     if (receivedBuffer.length !== digestBuffer.length) return false;
     return timingSafeEqual(receivedBuffer, digestBuffer);
   } catch (error) {
-    console.error("[VERIFY HMAC ERROR]:", error);
+    console.error("[ERROR] [VERIFY HMAC ERROR]:", error);
     return false;
   }
 }

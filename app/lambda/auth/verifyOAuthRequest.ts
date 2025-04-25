@@ -24,6 +24,18 @@ export const verifyOAuthRequest = async (
   const hmacBuffer = Buffer.from(generatedHmac, "utf-8");
   const receivedBuffer = Buffer.from(receivedHmac, "utf-8");
 
-  if (hmacBuffer.length !== receivedBuffer.length) return false;
-  return timingSafeEqual(hmacBuffer, receivedBuffer);
+  if (hmacBuffer.length !== receivedBuffer.length) {
+    if (process.env.NODE_ENV !== "production") {
+      console.warn("[verifyOAuthRequest] HMAC length mismatch");
+    }
+    return false;
+  }
+  const isValid = timingSafeEqual(hmacBuffer, receivedBuffer);
+  if (!isValid && process.env.NODE_ENV !== "production") {
+    console.warn("[verifyOAuthRequest] HMAC value mismatch", {
+      expected: generatedHmac,
+      received: receivedHmac
+    });
+  }
+  return isValid;
 };

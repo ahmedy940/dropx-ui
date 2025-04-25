@@ -1,3 +1,5 @@
+import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
+
 /**
  * ✅ GraphQL Queries & Mutations for Shopify Store Management
  */
@@ -157,7 +159,7 @@ export const graphqlRequest = async (
   variables?: any
 ) => {
   try {
-    const response = await fetch(`https://${shopDomain}/admin/api/2025-01/graphql.json`, {
+    const response = await fetch(`https://${shopDomain}/admin/api/2024-10/graphql.json`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -169,13 +171,13 @@ export const graphqlRequest = async (
     const data = await response.json();
 
     if (!data || data.errors) {
-      console.error("[GRAPHQL ERROR]:", data.errors || "Unknown error");
+      console.error("[ERROR] [GRAPHQL ERROR]:", data.errors || "Unknown error");
       return { success: false, error: data.errors };
     }
 
     return { success: true, data };
   } catch (error) {
-    console.error("[API ERROR]: GraphQL request failed.", error);
+    console.error("[ERROR] [API ERROR]: GraphQL request failed.", error);
     return { success: false, error };
   }
 };
@@ -183,33 +185,45 @@ export const graphqlRequest = async (
 /**
  * ✅ AWS Lambda Handler - Handles API Gateway Requests
  */
-export const handler = async (event: any) => {
-  console.log("Incoming Event:", JSON.stringify(event, null, 2));
-
+export const handler = async (
+  event: APIGatewayProxyEvent
+): Promise<APIGatewayProxyResult> => {
   const { path, httpMethod, queryStringParameters, body } = event;
+  console.info("[INFO] [HANDLER START]:", { path, httpMethod });
+
   let response;
 
   try {
     if (httpMethod === "POST") {
-      const { shopDomain, accessToken, query, variables } = JSON.parse(body);
+      const parsedBody = body ? JSON.parse(body) : {};
+      const { shopDomain, accessToken, query, variables } = parsedBody;
+
       if (!shopDomain || !accessToken || !query) {
+        console.warn("[WARN] [MISSING PARAMS]:", { shopDomain, accessToken, query });
         throw new Error("Missing required parameters");
       }
 
       response = await graphqlRequest(query, shopDomain, accessToken, variables);
+
+      if (response.success) {
+        console.info("[INFO] [GRAPHQL SUCCESS]");
+      } else {
+        console.error("[ERROR] [GRAPHQL FAILURE]:", response.error);
+      }
     } else {
       response = { error: "Invalid Route or Method" };
     }
 
+    const statusCode = response && response.success ? 200 : 400;
     return {
-      statusCode: 200,
+      statusCode,
       body: JSON.stringify(response),
     };
   } catch (error) {
-    console.error("Error in handler:", error);
+    console.error("[ERROR] [Handler]", error);
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: "Internal Server Error" }),
+      body: JSON.stringify({ success: false, error: "Internal Server Error" }),
     };
   }
 };

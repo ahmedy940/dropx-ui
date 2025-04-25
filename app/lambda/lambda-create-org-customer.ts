@@ -1,5 +1,3 @@
-
-
 import { findMerchantByDomain } from "./services/merchant.service";
 import { createCustomerInOrg } from "./services/shopify-org.service";
 import { getSSMParam } from "../utils/getSSMParam";

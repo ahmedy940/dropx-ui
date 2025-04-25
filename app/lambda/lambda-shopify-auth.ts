@@ -1,13 +1,15 @@
+import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
 import { authenticateOrgShopify } from "./auth/orgAuth";
 
+// Internal route handler for Shopify authentication requests
 type InternalHandler = (event: any) => Promise<any>;
 
 const routes: Record<string, InternalHandler> = {
   "/shopify/org-auth": authenticateOrgShopify,
 };
 
-export const handler = async (event: any) => {
-  const path = event.rawPath || event.path || "";
+export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+  const path = event.path || "";
   console.info("[SHOPIFY INTERNAL] Incoming request:", path);
 
   const handlerFn = routes[path];

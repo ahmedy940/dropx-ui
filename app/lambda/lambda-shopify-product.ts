@@ -6,7 +6,7 @@ import { getSSMParam } from "../utils/getSSMParam";
  * ✅ Fetch Product Details from Organization Store (AWS Lambda Version)
  */
 export const fetchProductFromOrgStore = async (productId: string) => {
-  console.log(`[ORG STORE]: Fetching product ${productId}...`);
+  console.info(`[INFO] [ORG STORE]: Fetching product ${productId}...`);
 
   const query = `
     query FetchProduct($id: ID!) {
@@ -52,7 +52,7 @@ export const fetchProductFromOrgStore = async (productId: string) => {
     );
     return response.data?.product || null;
   } catch (error) {
-    console.error("[GRAPHQL ERROR]: Failed to fetch product", error);
+    console.error("[ERROR] [GRAPHQL ERROR]: Failed to fetch product", error);
     return null;
   }
 };
@@ -62,7 +62,11 @@ export const fetchProductFromOrgStore = async (productId: string) => {
  */
 export const copyProductToMerchantStore = async (product: any, shopDomain: string, accessToken: string) => {
   try {
-    console.log(`[PRODUCT SYNC]: Copying product to ${shopDomain}...`);
+    console.info(`[INFO] [PRODUCT SYNC]: Copying product to ${shopDomain}...`);
+
+    if (!product.title || !product.variants || !Array.isArray(product.variants.edges)) {
+      throw new Error("Invalid product input");
+    }
 
     const mutation = `
       mutation CopyProduct($input: ProductInput!) {
@@ -89,7 +93,7 @@ export const copyProductToMerchantStore = async (product: any, shopDomain: strin
     const response = await graphqlRequest(mutation, shopDomain, accessToken, variables);
     return { success: true, data: response };
   } catch (error) {
-    console.error("[PRODUCT SYNC ERROR]: Failed to copy product", error);
+    console.error("[ERROR] [PRODUCT SYNC ERROR]: Failed to copy product", error);
     return { success: false, error };
   }
 };
@@ -98,7 +102,12 @@ export const copyProductToMerchantStore = async (product: any, shopDomain: strin
  * ✅ AWS Lambda Handler - Routes API requests
  */
 export const handler = async (event: any) => {
-  console.log("Incoming Event:", JSON.stringify(event, null, 2));
+  console.info("[INFO] Incoming Event:", JSON.stringify(event, null, 2));
+
+  const requestId = event.requestContext?.requestId;
+  if (requestId) {
+    console.info(`[INFO] [REQUEST ID: ${requestId}]`);
+  }
 
   const { path, httpMethod, queryStringParameters, body } = event;
   let response;
@@ -119,11 +128,11 @@ export const handler = async (event: any) => {
     }
 
     return {
-      statusCode: 200,
+      statusCode: response?.error || !response ? 400 : 200,
       body: JSON.stringify(response),
     };
   } catch (error) {
-    console.error("Error in handler:", error);
+    console.error("[ERROR] Handler failure:", error);
     return {
       statusCode: 500,
       body: JSON.stringify({ error: "Internal Server Error" }),

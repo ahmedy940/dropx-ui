@@ -1,6 +1,6 @@
-
 import { LoaderFunctionArgs } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
+import { getSSMParam } from "../utils/getSSMParam";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const url = new URL(request.url);
@@ -10,7 +10,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
     throw new Response("Missing shop parameter", { status: 400 });
   }
 
-  const response = await fetch("https://o5p1jotn5j.execute-api.us-east-1.amazonaws.com/dev/check-org-customer", {
+  const apiBaseUrl = await getSSMParam("/dropx/dev/DROPX_API_BASE_URL");
+
+  const response = await fetch(`${apiBaseUrl}/check-org-customer`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

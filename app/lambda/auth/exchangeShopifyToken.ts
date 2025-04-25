@@ -9,10 +9,19 @@ export async function exchangeShopifyToken(shop: string, code: string, clientId:
     }),
   });
 
+  const rawBody = await tokenRes.text();
+
+  if (!tokenRes.ok) {
+    console.error(`[Shopify Token Exchange] Failed with status ${tokenRes.status}`);
+    console.error("[Shopify Token Exchange] Response body:", rawBody);
+    return null;
+  }
+
   try {
-    const tokenData = await tokenRes.json();
+    const tokenData = JSON.parse(rawBody);
     return tokenData.access_token || null;
-  } catch {
+  } catch (err) {
+    console.error("[Shopify Token Exchange] Failed to parse token JSON", err);
     return null;
   }
 }

@@ -6,6 +6,11 @@ export default function RegisterSuccess() {
   const shop = searchParams.get("shop") || "";
   const shopName = searchParams.get("shopName") || "";
 
+  const postInstallUrl = new URL("/post-install", process.env.DROPX_APPLICATION_URL);
+  postInstallUrl.searchParams.set("email", email);
+  postInstallUrl.searchParams.set("shop", shop);
+  postInstallUrl.searchParams.set("shopName", shopName);
+
   return (
     <div style={{ padding: "3rem", textAlign: "center", fontFamily: "sans-serif" }}>
       <h1>🎉 Registration Successful!</h1>
@@ -14,7 +19,7 @@ export default function RegisterSuccess() {
       </p>
       <p>You're now ready to link it to DropX and begin syncing products.</p>
       <a
-        href={`/post-install?email=${encodeURIComponent(email)}&shop=${encodeURIComponent(shop)}&shopName=${encodeURIComponent(shopName)}`}
+        href={postInstallUrl.toString()}
         style={{
           marginTop: "2rem",
           display: "inline-block",

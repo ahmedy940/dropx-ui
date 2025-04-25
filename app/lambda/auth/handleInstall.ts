@@ -9,7 +9,7 @@ import { storeOAuthState } from "../utils/stateStore";
 const SHOPIFY_APP_SCOPE = "read_analytics,write_checkouts,write_companies,write_customers,write_discounts,write_draft_orders,write_fulfillments,write_inventory,write_locales,write_locations,write_marketing_events,write_metaobjects,write_orders,write_payment_terms,write_price_rules,write_products,write_reports,write_resource_feedbacks,write_script_tags,write_shipping,write_themes,read_shop";
 
 export const authenticateShopify = async (event: any) => {
-  console.log("Authenticating Shopify install request:", JSON.stringify(event, null, 2));
+  console.log("[INFO] Authenticating Shopify install request:", JSON.stringify(event, null, 2));
 
   try {
     const DROPX_SHOPIFY_API_KEY = await getSSMParam("DROPX_SHOPIFY_API_KEY");
@@ -35,8 +35,8 @@ export const authenticateShopify = async (event: any) => {
 
     const redirectToShopifyOAuth = `https://${shop}/admin/oauth/authorize?client_id=${DROPX_SHOPIFY_API_KEY}&scope=${SHOPIFY_APP_SCOPE}&redirect_uri=${encodeURIComponent(DROPX_APPLICATION_URL + "/shopify/callback")}&state=${state}`;
 
-    console.log("[Install] Redirecting to:", redirectToShopifyOAuth);
-    console.log("[Install] OAuth state:", state);
+    console.log("[INFO] [Install] Redirecting to:", redirectToShopifyOAuth);
+    console.log("[INFO] [Install] OAuth state:", state);
 
     return {
       statusCode: 302,
@@ -46,7 +46,7 @@ export const authenticateShopify = async (event: any) => {
       body: "",
     };
   } catch (error) {
-    console.error("OAuth Install Error:", error);
+    console.error("[ERROR] OAuth Install Error:", error);
     return {
       statusCode: 500,
       body: JSON.stringify({ error: "Internal Server Error during OAuth" }),

@@ -7,9 +7,14 @@ export async function fetchShopInfo(shop: string, accessToken: string): Promise<
   });
 
   try {
+    if (!shopInfoRes.ok) {
+      console.error(`Failed to fetch shop info: ${shopInfoRes.status} ${shopInfoRes.statusText}`);
+      return null;
+    }
     const data = await shopInfoRes.json();
     return data.shop || null;
-  } catch {
+  } catch (error) {
+    console.error("Error parsing shop info response:", error);
     return null;
   }
 }
