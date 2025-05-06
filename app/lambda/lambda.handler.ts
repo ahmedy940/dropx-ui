@@ -1,6 +1,6 @@
 // Auth
 export { handler as authHandler } from "./lambda-shopify-auth";
-export { handler as authRouterHandler } from "./lambda-auth-router";
+export { handler as authRouterHandler } from "../auth-service/lambda/lambda-auth-router";
 
 // Merchant Management
 export { handler as checkOrgCustomerHandler } from "./lambda-check-org-customer";

@@ -1,5 +1,5 @@
 import { APIGatewayProxyEvent } from "aws-lambda";
-import { validateInstallQuery } from "./utils/validateInstallQuery";
+import { validateInstallQuery } from "../auth-service/utils/validateInstallQuery";
 import { decideNextStep } from "./utils/handleMerchantRouting";
 import { triggerMerchantSync } from "./services/syncTrigger.service";
 

@@ -1,0 +1,50 @@
+service: dropx-auth-service
+
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: us-east-1
+  stage: ${opt:stage, 'dev'}
+  environment:
+    NODE_ENV: production
+    STAGE: ${opt:stage, 'dev'}
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - ssm:GetParameter
+            - ssm:GetParameters
+            - ssm:GetParametersByPath
+          Resource: arn:aws:ssm:${self:provider.region}:*:parameter/dropx/${self:provider.stage}/*
+
+functions:
+  authRouter:
+    handler: lambda/lambda-auth-router.handler
+    events:
+      - httpApi:
+          path: /shopify/auth
+          method: get
+      - httpApi:
+          path: /shopify/callback
+          method: get
+
+plugins:
+  - serverless-esbuild
+
+custom:
+  esbuild:
+    bundle: true
+    minify: false
+    sourcemap: true
+    target: node18
+    platform: node
+    concurrency: 10
+    external:
+      - '@prisma/client'
+      - '.prisma/client'
+      - aws-sdk
+      - path
+      - crypto

@@ -1,16 +1,15 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
-import { authenticateShopify } from "./auth/handleInstall";
-import { handleCallback } from "./auth/handleCallback";
+import { authenticateShopify } from "app/auth-service/oauth-install";
 
 type AuthRouteHandler = (event: APIGatewayProxyEvent) => Promise<APIGatewayProxyResult>;
 
 const routes: Record<string, AuthRouteHandler> = {
   "/shopify/auth": authenticateShopify,
-  "/shopify/callback": handleCallback,
+  "/shopify/callback": authenticateShopify,
 };
 
 export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
-  const path = event.path || "";
+  const path = (event as any).rawPath || event.path || "";
   const traceId = event.headers["X-Amzn-Trace-Id"] || `trace-${Date.now()}`;
   const method = event.httpMethod;
   console.info(`[INFO] [AUTH ROUTER] [${traceId}] Incoming ${method} request to: ${path}`);

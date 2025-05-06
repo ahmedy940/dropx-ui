@@ -1,4 +1,4 @@
-import { extractQueryParams } from "./queryString";
+import { extractQueryParams } from "../../lambda/utils/queryString";
 
 export function validateInstallQuery(query: Record<string, string | undefined>) {
   const extracted = extractQueryParams(query);

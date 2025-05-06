@@ -46,16 +46,6 @@ functions:
           path: /shopify/org-auth
           method: post
 
-  authRouterHandler:
-    handler: app/lambda/lambda-auth-router.handler
-    events:
-      - httpApi:
-          path: /shopify/auth
-          method: get
-      - httpApi:
-          path: /shopify/callback
-          method: get
-
   checkOrgCustomerHandler:
     handler: app/lambda/lambda-check-org-customer.handler
     events:
@@ -116,7 +106,6 @@ custom:
       - app/lambda/remixHandler.ts
       - app/lambda/lambda-handler.ts
       - app/lambda/lambda-shopify-auth.ts
-      - app/lambda/lambda-auth-router.ts
       - app/lambda/lambda-check-org-customer.ts
       - app/lambda/lambda-check-merchant.ts
       - app/lambda/lambda-create-org-customer.ts
@@ -132,10 +121,6 @@ custom:
 #       Value: !GetAtt authHandler.Arn
 #       Export:
 #         Name: AuthHandlerFunction
-#     AuthRouterHandlerFunction:
-#       Value: !GetAtt authRouterHandler.Arn
-#       Export:
-#         Name: AuthRouterHandlerFunction
 #     CheckOrgCustomerHandlerFunction:
 #       Value: !GetAtt checkOrgCustomerHandler.Arn
 #       Export:
