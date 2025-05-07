@@ -25,9 +25,10 @@ package:
   patterns:
     - 'lambda/**'
     - '../db/**'
-    - '../utils/**'
-    - '../services/**'
-    - '../config/**'
+    - '../utils/getSSMParam.ts'
+    - '../services/syncTrigger.service.ts'
+    - '.prisma/client/**'
+    - 'node_modules/@prisma/client/**'
     - '!**/*.test.ts'
     - '!**/__mocks__/**'
     - '!**/*.md'
