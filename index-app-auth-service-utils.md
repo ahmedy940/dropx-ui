@@ -1,125 +1,10 @@
 # Code Index for app/auth-service/utils
 
-## app/auth-service/utils/processShopInstall.ts
-
-```ts
-import { upsertShop } from "../../db/shop.db";
-import { addSessionToDB } from "../../db/session.db";
-import { logActivity } from "../../db/activityLog.db";
-
-export async function processShopInstall(shop: string, accessToken: string, shopData: any) {
-  const email = shopData.email || "";
-  const name = shopData.name || "";
-  const plan = shopData.plan_display_name || "";
-  const primaryDomain = shopData.primary_domain?.host || "";
-  const currencyCode = shopData.currency || "";
-  const timezone = shopData.iana_timezone || "";
-  const isCheckoutSupported = shopData.checkout_api_supported || false;
-
-  await upsertShop({
-    shopDomain: shop,
-    email,
-    name,
-    plan,
-    primaryDomain,
-    currencyCode,
-    timezone,
-    isCheckoutSupported,
-    accessToken,
-  });
-
-  await addSessionToDB({
-    shopDomain: shop,
-    accessToken,
-    email,
-    state: "",
-    scope: "read_analytics,write_checkouts,write_companies,write_customers,write_discounts,write_draft_orders,write_fulfillments,write_inventory,write_locales,write_locations,write_marketing_events,write_metaobjects,write_orders,write_payment_terms,write_price_rules,write_products,write_reports,write_resource_feedbacks,write_script_tags,write_shipping,write_themes,read_shop",
-    isOnline: false,
-    expires: null,
-  });
-
-  await logActivity(shop, "App Installed via OAuth");
-
-  return { email, name };
-}
-
-```
-
-## app/auth-service/utils/fetchShopInfo.ts
-
-```ts
-export async function fetchShopInfo(shop: string, accessToken: string): Promise<any> {
-  const shopInfoRes = await fetch(`https://${shop}/admin/api/2024-10/shop.json`, {
-    headers: {
-      "X-Shopify-Access-Token": accessToken,
-      "Content-Type": "application/json",
-    },
-  });
-
-  try {
-    if (!shopInfoRes.ok) {
-      console.error(`Failed to fetch shop info: ${shopInfoRes.status} ${shopInfoRes.statusText}`);
-      return null;
-    }
-    const data = await shopInfoRes.json();
-    return data.shop || null;
-  } catch (error) {
-    console.error("Error parsing shop info response:", error);
-    return null;
-  }
-}
-
-```
-
-## app/auth-service/utils/upsertSopInDB.ts
-
-```ts
-
-
-import { processShopInstall } from "./processShopInstall";
-
-export async function upsertShopInDb(shop: string, accessToken: string, shopData: any) {
-  return processShopInstall(shop, accessToken, shopData);
-}
-```
-
-## app/auth-service/utils/queryString.ts
-
-```ts
-type QueryParamsResult =
-  | { shop: string; email: string; shopName: string; state: string }
-  | { error: string };
-
-export function extractQueryParams(
-  query: Record<string, string | undefined>
-): QueryParamsResult {
-  const { shop, email, shopName, state } = query || {};
-  const missing = [];
-  if (!shop) missing.push("shop");
-  if (!email) missing.push("email");
-  if (!shopName) missing.push("shopName");
-  if (!state) missing.push("state");
-
-  if (missing.length > 0) {
-    return { error: `Missing required parameters: ${missing.join(", ")}` };
-  }
-
-  return {
-    shop: shop as string,
-    email: email as string,
-    shopName: shopName as string,
-    state: state as string,
-  };
-}
-```
-
 ## app/auth-service/utils/exchangeCodeForToken.ts
 
 ```ts
-
-
 import { exchangeShopifyToken } from "./exchangeShopifyToken";
-import { getSSMParam } from "../../../utils/getSSMParam";
+import { getSSMParam } from "../../utils/getSSMParam";
 
 export async function exchangeCodeForToken(shop: string, code: string) {
   const apiKey = await getSSMParam("DROPX_SHOPIFY_API_KEY");
@@ -128,31 +13,6 @@ export async function exchangeCodeForToken(shop: string, code: string) {
 
   return exchangeShopifyToken(shop, code, apiKey, apiSecret);
 }
-```
-
-## app/auth-service/utils/handleMerchantRouting.ts
-
-```ts
-export function decideNextStep(
-  shop: string,
-  email: string,
-  shopName?: string,
-  needsRegistration = false
-) {
-  const query = new URLSearchParams({ shop, email });
-  if (shopName) query.append("shopName", shopName);
-
-  return {
-    statusCode: 302,
-    headers: {
-      Location: needsRegistration
-        ? `/register-redirect?${query.toString()}`
-        : `/app-installed?shop=${shop}&email=${email}`,
-    },
-    body: "",
-  };
-}
-
 ```
 
 ## app/auth-service/utils/validateCallbackQuery.ts
@@ -172,7 +32,7 @@ export function validateCallbackQuery(query: Record<string, string | undefined>)
 ## app/auth-service/utils/validateInstallQuery.ts
 
 ```ts
-import { extractQueryParams } from "./queryString";
+import { extractQueryParams } from "../../lambda/utils/queryString";
 
 export function validateInstallQuery(query: Record<string, string | undefined>) {
   const extracted = extractQueryParams(query);
@@ -184,42 +44,6 @@ export function validateInstallQuery(query: Record<string, string | undefined>) 
   return extracted;
 }
 
-```
-
-## app/auth-service/utils/orgAuth.ts
-
-```ts
-import { getShopByDomain } from "../../db/shop.db";
-
-export const authenticateOrgShopify = async (shopDomain: string) => {
-  if (!shopDomain) {
-    console.warn("[WARN] [org-auth] Missing shop domain");
-    throw new Error("Missing shop domain");
-  }
-
-  const shop = await getShopByDomain(shopDomain);
-  if (!shop) {
-    console.warn(`[WARN] [org-auth] Shop not found for domain: ${shopDomain}`);
-    throw new Error("Shop not found in DropX organization");
-  }
-
-  return shop;
-};
-
-```
-
-## app/auth-service/utils/fetchShopDetails.ts
-
-```ts
-
-
-import { fetchShopInfo } from "./fetchShopInfo";
-
-export async function fetchShopDetails(shop: string, accessToken: string) {
-  const shopData = await fetchShopInfo(shop, accessToken);
-  if (!shopData) throw new Error("Invalid shop data received");
-  return shopData;
-}
 ```
 
 ## app/auth-service/utils/exchangeShopifyToken.ts
@@ -258,8 +82,6 @@ export async function exchangeShopifyToken(shop: string, code: string, clientId:
 ## app/auth-service/utils/buildRedirectUrl.ts
 
 ```ts
-
-
 import { getSSMParam } from "../../utils/getSSMParam";
 
 export async function buildRedirectUrl(shop: string, email: string, name: string) {
@@ -314,81 +136,6 @@ export const verifyOAuthRequest = async (
   }
   return isValid;
 };
-```
-
-## app/auth-service/utils/verifyWebhook.ts
-
-```ts
-import { createHmac, timingSafeEqual } from "crypto";
-
-/**
- * ✅ Validates the HMAC signature for Shopify webhook security
- */
-export function verifyWebhookHMAC(rawBody: string, hmacHeader: string, webhookSecret: string): boolean {
-  try {
-    const digest = createHmac("sha256", webhookSecret)
-      .update(rawBody, "utf8")
-      .digest("base64");
-
-    const receivedBuffer = Buffer.from(hmacHeader, "base64");
-    const digestBuffer = Buffer.from(digest, "base64");
-
-    if (process.env.NODE_ENV === "development") {
-      console.log("[DEBUG] Calculated HMAC:", digest);
-      console.log("[DEBUG] Received HMAC:", hmacHeader);
-    }
-
-    if (receivedBuffer.length !== digestBuffer.length) return false;
-    return timingSafeEqual(receivedBuffer, digestBuffer);
-  } catch (error) {
-    console.error("[ERROR] [VERIFY HMAC ERROR]:", error);
-    return false;
-  }
-}
-```
-
-## app/auth-service/utils/db.server.ts
-
-```ts
-import { PrismaClient } from "@prisma/client";
-import { SSMClient, GetParameterCommand } from "@aws-sdk/client-ssm";
-
-let prisma: PrismaClient | undefined;
-
-async function getDatabaseUrl(): Promise<string> {
-  const ssm = new SSMClient({});
-  const command = new GetParameterCommand({
-    Name: "/dropx/dev/DROPX_DATABASE_URL",
-    WithDecryption: true,
-  });
-
-  try {
-    const result = await ssm.send(command);
-    const dbUrl = result.Parameter?.Value;
-    if (!dbUrl) {
-      throw new Error("DROPX_DATABASE_URL not found in SSM");
-    }
-    return dbUrl;
-  } catch (error) {
-    console.error("Failed to fetch database URL from SSM:", error);
-    throw new Error("Database configuration error");
-  }
-}
-
-export async function getPrisma(): Promise<PrismaClient> {
-  if (prisma) return prisma;
-
-  const url = await getDatabaseUrl();
-  prisma = new PrismaClient({
-    datasources: {
-      db: {
-        url,
-      },
-    },
-  });
-
-  return prisma;
-}
 ```
 
 ## app/auth-service/utils/stateStore.ts

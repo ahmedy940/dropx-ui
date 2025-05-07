@@ -60,6 +60,8 @@ custom:
       - aws-sdk
       - path
       - crypto
-    exclude:
-      - prisma
-    includeModules: true
+    packager: npm
+    packagerOptions:
+      scripts:
+        - npm install
+        - npx prisma generate --schema=../../prisma/schema.prisma
