@@ -57,8 +57,9 @@ custom:
     platform: node
     concurrency: 10
     external:
-      - '@prisma/client'
-      - '.prisma/client'
       - aws-sdk
       - path
       - crypto
+    exclude:
+      - prisma
+    includeModules: true
