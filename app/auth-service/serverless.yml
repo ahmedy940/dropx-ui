@@ -20,6 +20,19 @@ provider:
             - ssm:GetParametersByPath
           Resource: arn:aws:ssm:${self:provider.region}:*:parameter/dropx/${self:provider.stage}/*
 
+package:
+  individually: true
+  patterns:
+    - 'lambda/**'
+    - '../db/**'
+    - '../utils/**'
+    - '../services/**'
+    - '../config/**'
+    - '!**/*.test.ts'
+    - '!**/__mocks__/**'
+    - '!**/*.md'
+    - '!**/*.map'
+
 functions:
   authRouter:
     handler: lambda/lambda-auth-router.handler

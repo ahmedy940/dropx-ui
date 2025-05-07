@@ -9,32 +9,36 @@ export default function PostInstall() {
 
   const [status, setStatus] = useState<"checking" | "linked" | "not_found">("checking");
 
-  useEffect(() => {
-    const isValidEmail = email.includes("@");
-    const isValidShop = shop.endsWith(".myshopify.com");
+  const isValidEmail = email.length > 3 && email.includes("@");
+  const isValidShop = shop.length > 10 && shop.endsWith(".myshopify.com");
 
-    if (isValidEmail && isValidShop) {
-      console.info("[PostInstall] Checking store:", { shop, email });
-      fetch("https://api.drop-x.co/post-install", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ shop, email }),
-      })
-        .then((res) => {
-          if (res.status === 200) {
-            setStatus("linked");
-          } else {
-            setStatus("not_found");
-          }
-        })
-        .catch((error) => {
-          console.error("[PostInstall] API call failed", error);
+  if (!isValidEmail || !isValidShop) {
+    return (
+      <main style={{ fontFamily: "sans-serif", padding: "3rem", textAlign: "center" }}>
+        <h1>Oops! Something went wrong</h1>
+        <p>Missing or invalid shop and email parameters.</p>
+      </main>
+    );
+  }
+
+  useEffect(() => {
+    console.info("[PostInstall] Checking store:", { shop, email });
+    fetch("https://api.drop-x.co/post-install", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ shop, email }),
+    })
+      .then((res) => {
+        if (res.status === 200) {
+          setStatus("linked");
+        } else {
           setStatus("not_found");
-        });
-    } else {
-      console.warn("[PostInstall] Invalid shop or email", { shop, email });
-      setStatus("not_found");
-    }
+        }
+      })
+      .catch((error) => {
+        console.error("[PostInstall] API call failed", error);
+        setStatus("not_found");
+      });
   }, [shop, email]);
 
   return (
